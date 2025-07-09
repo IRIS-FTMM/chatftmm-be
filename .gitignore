@@ -6,10 +6,6 @@ __pycache__/
 # File sensitif
 .env
 
-# Folder data dan model (terlalu besar untuk Git)
-/data/
-/artifacts/
-
 # File sistem operasi
 .DS_Store
 Thumbs.db

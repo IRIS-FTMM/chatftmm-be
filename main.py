@@ -9,8 +9,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Konfigurasi CORS
-origins = ["http://localhost", "http://localhost:5173"]
+# --- PERBAIKAN DI SINI ---
+# Tambahkan URL frontend Anda yang sudah di-deploy ke dalam daftar origins.
+# Ini akan mengizinkan frontend Anda untuk berkomunikasi dengan backend.
+origins = [
+    "http://localhost",
+    "http://localhost:5173",
+    "https://chatftmm-fe-production.up.railway.app" # URL Frontend di Railway
+]
+# --- AKHIR PERBAIKAN ---
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

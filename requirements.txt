@@ -3,9 +3,9 @@ uvicorn
 python-dotenv
 pydantic-settings
 pandas
-openai
 openpyxl
 dill
 nltk
-scikit-learn
 Sastrawi
+requests
+numpy

@@ -1,21 +1,15 @@
-# app/core/summarization.py
-
+# ===================================================================
+# File: summarization.py (MODIFIKASI)
+# Perubahan: Menambahkan logika coba lagi (retry) untuk menangani error 429.
+# ===================================================================
 import requests
 import json
+import time
 from config import settings
 
 class Summarizer:
     def summarize(self, query: str, contexts: list[str]) -> str:
-        """
-        Buat rangkuman berdasarkan query dan konteks dokumen menggunakan model di OpenRouter
-        dengan panggilan API langsung menggunakan pustaka 'requests'.
-        """
-        
-        # Menggabungkan semua konteks menjadi satu blok teks yang terstruktur
         combined_context = "\n\n---\n\n".join(contexts)
-
-        # --- CHAIN-OF-THOUGHT (CoT) PROMPT ---
-        # Prompt ini tetap sama, menginstruksikan model untuk berpikir secara bertahap.
         prompt = f"""
         Anda adalah asisten AI dari Fakultas Teknologi Maju dan Multidisiplin (FTMM) Universitas Airlangga.
         Tugas Anda adalah menjawab pertanyaan pengguna secara akurat dan informatif HANYA berdasarkan informasi dari "Konteks Dokumen" yang diberikan.
@@ -45,43 +39,49 @@ class Summarizer:
         Sekarang, berikan jawaban akhir yang sudah Anda sintesis.
         """
         
-        try:
-            # Melakukan panggilan POST ke API OpenRouter menggunakan pustaka requests
-            response = requests.post(
-                url="https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": settings.HTTP_REFERER, 
-                    "X-Title": "Chatbot FTMM"
-                },
-                data=json.dumps({
-                    "model": "deepseek/deepseek-r1-0528:free",
-                    "messages": [
-                        {"role": "system", "content": "Anda adalah asisten AI yang ahli dalam menganalisis teks dan merangkum informasi secara akurat."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    "max_tokens": 500,
-                    "temperature": 0.5
-                })
-            )
+        # --- PERUBAHAN DI SINI: LOGIKA RETRY ---
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(
+                    url="https://openrouter.ai/api/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": settings.HTTP_REFERER, 
+                        "X-Title": "Chatbot FTMM"
+                    },
+                    data=json.dumps({
+                        "model": "qwen/qwen-2.5-72b-instruct:free",
+                        "messages": [
+                            {"role": "system", "content": "Anda adalah asisten AI yang ahli dalam menganalisis teks dan merangkum informasi secara akurat."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        "max_tokens": 2000,
+                        "temperature": 0.5
+                    }),
+                    timeout=60
+                )
 
-            # Memeriksa apakah request berhasil
-            response.raise_for_status()
+                if response.status_code == 429:
+                    wait_time = 30 * (attempt + 1)
+                    print(f"Rate limit terdeteksi. Menunggu {wait_time} detik...")
+                    time.sleep(wait_time)
+                    continue # Coba lagi
+
+                response.raise_for_status()
+                response_data = response.json()
+                return response_data['choices'][0]['message']['content'].strip()
             
-            # Mengambil data JSON dari respons
-            response_data = response.json()
-            
-            # Mengambil konten teks dari jawaban pertama
-            return response_data['choices'][0]['message']['content'].strip()
+            except requests.exceptions.RequestException as e:
+                print(f"Error dalam pemanggilan API OpenRouter (Percobaan {attempt + 1}): {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(5) # Jeda singkat sebelum retry
+                else:
+                    return "Maaf, terjadi kesalahan koneksi ke server AI."
+            except (KeyError, IndexError) as e:
+                print(f"Error parsing respons dari OpenRouter: {e}")
+                return "Maaf, terjadi kesalahan dalam memproses respons dari server."
         
-        except requests.exceptions.RequestException as e:
-            # Menangani semua error yang berhubungan dengan koneksi atau request
-            print(f"Error dalam pemanggilan API OpenRouter: {e}")
-            return "Maaf, terjadi kesalahan dalam memproses pertanyaan Anda."
-        except (KeyError, IndexError) as e:
-            # Menangani error jika struktur JSON dari respons tidak seperti yang diharapkan
-            print(f"Error parsing respons dari OpenRouter: {e}")
-            print(f"Response Body: {response.text}")
-            return "Maaf, terjadi kesalahan dalam memproses respons dari server."
-
+        return "Maaf, terjadi kesalahan setelah beberapa kali percobaan."
+        # --- AKHIR PERUBAHAN ---

@@ -22,11 +22,12 @@ def get_chatbot_response(query: str) -> str:
         # Tahap 2: Pengumpulan Konteks dari Dataset Lengkap
         contexts = []
         for idx in doc_indices:
-            # Cari baris yang cocok di DF_DATASET
             matching_row = DF_DATASET[DF_DATASET['Index'] == idx]
             if not matching_row.empty:
-                # Ambil teks dari kolom 'Preprocessed Isi File'
-                context_text = matching_row['Preprocessed Isi File'].values[0]
+                # --- PASTIKAN NAMA KOLOM INI SESUAI DENGAN EXCEL ANDA ---
+                # Jika nama kolomnya 'Isi File', maka gunakan 'Isi File'
+                context_text = matching_row['Isi File'].values[0] 
+                # --- AKHIR PENGECEKAN ---
                 if pd.notna(context_text):
                     contexts.append(str(context_text))
 

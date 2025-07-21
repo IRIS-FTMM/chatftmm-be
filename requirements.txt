@@ -1,11 +1,22 @@
+# Core FastAPI Server
 fastapi
 uvicorn
+
+# Environment & Konfigurasi
 python-dotenv
 pydantic-settings
+
+# Pembacaan Data & Pra-pemrosesan (BM25L)
 pandas
 openpyxl
-dill
 nltk
 Sastrawi
-requests
 numpy
+
+# Serialisasi Model Cache (untuk BM25L)
+dill
+
+# Koneksi ke Layanan AI (Versi Final)
+openai
+pinecone-client
+tiktoken

@@ -1,4 +1,4 @@
-# file: main.py (PERBAIKAN CORS)
+# file: main.py (PERBAIKAN CORS FINAL)
 
 from fastapi import FastAPI
 from chat_router import router as chat_router
@@ -7,25 +7,21 @@ import model_service
 
 app = FastAPI(
     title="Chatbot FTMM API",
-    description="API untuk chatbot informasi Fakultas Teknologi Maju dan Multidisiplin",
+    description="API untuk chatbot informasi Fakultas Teknologi Maju dan Multidisplin",
     version="1.0.0"
 )
 
-# --- PERUBAHAN PENTING ADA DI SINI ---
-# Tambahkan URL frontend Anda yang sudah di-deploy ke dalam daftar origins
-origins = [
-    "http://localhost",
-    "http://localhost:5173",
-    "https://chatftmm-fe-production-9d80.up.railway.app", # <-- URL BARU DITAMBAHKAN
-]
+# --- PERUBAHAN KRUSIAL ADA DI SINI ---
+# Kita mengizinkan semua origin untuk sementara waktu untuk debugging
+origins = ["*"]
 # ------------------------------------
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"], # Izinkan semua metode (GET, POST, dll)
-    allow_headers=["*"], # Izinkan semua header
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # API Routers
@@ -34,8 +30,8 @@ app.include_router(chat_router, prefix="/api", tags=["Chat"])
 @app.on_event("startup")
 async def startup_event():
     print("🚀 Aplikasi FastAPI memulai...")
-
-    # Inisialisasi Klien OpenAI (PENTING untuk perbaikan kedua)
+    
+    # Inisialisasi Klien OpenAI
     model_service.init_openai_client()
 
     # Memuat dataset lengkap terlebih dahulu

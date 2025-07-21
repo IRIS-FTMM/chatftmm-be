@@ -1,19 +1,19 @@
-# file: summarization.py (FINAL DENGAN PENANGANAN AMBIGUITAS & SINONIM)
+# file: summarization.py (PERBAIKAN CARA MENGGUNAKAN KLIEN)
 
-import requests
-import json
 import time
-from config import settings
+from openai import RateLimitError, APIConnectionError, APIStatusError
+import model_service # <-- Impor seluruh modul
 
 class Summarizer:
     def summarize(self, query: str, contexts: list[str]) -> str:
-        """
-        Mengirim konteks ke API LLM dan mengembalikan jawaban yang sudah diringkas
-        dengan penanganan konteks spesifik FTMM.
-        """
-        combined_context = "\n\n---\n\n".join(contexts)
+        # Cek apakah klien sudah siap dari model_service
+        client = model_service.openai_client
+        if not client:
+            return "Maaf, koneksi ke layanan AI tidak siap. Periksa log server."
 
-        # Prompt yang disempurnakan dengan instruksi penanganan ambiguitas
+        combined_context = "\n\n---\n\n".join(contexts)
+        
+        # Prompt lengkap Anda (tidak ada perubahan di sini)
         prompt = f"""
         Anda adalah asisten AI ahli dari Fakultas Teknologi Maju dan Multidisiplin (FTMM) Universitas Airlangga.
         Anda harus menjawab dengan SANGAT AKURAT berdasarkan konteks yang diberikan dan mengikuti semua peraturan.
@@ -48,36 +48,36 @@ class Summarizer:
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                print(f"Percobaan ke-{attempt + 1} untuk menghubungi API OpenAI...")
-                # Di sini Anda akan menggunakan klien OpenAI yang sudah diinisialisasi
-                # (Asumsi Anda sudah beralih dari OpenRouter ke OpenAI seperti percakapan sebelumnya)
-                # Jika masih menggunakan OpenRouter, sesuaikan kembali.
+                print(f"Percobaan ke-{attempt + 1} untuk menghubungi OpenAI API...")
                 
-                # Contoh menggunakan OpenAI client (pastikan sudah diinisialisasi di tempat lain)
-                from model_service import client as openai_client # Contoh impor
-                if not openai_client:
-                    return "Klien OpenAI tidak terinisialisasi."
-
-                response = openai_client.chat.completions.create(
-                    model="gpt-4.1-mini", # Atau model lain yang Anda pilih
-                    messages=[
-                        {"role": "user", "content": prompt}
-                    ],
+                response = client.chat.completions.create(
+                    model="gpt-4.1-mini",
+                    messages=[{"role": "user", "content": prompt}],
                     max_tokens=400,
                     temperature=0.1
                 )
                 
                 content = response.choices[0].message.content
                 if content:
-                    print("Respons AI berhasil diterima.")
+                    print("Respons dari OpenAI API berhasil diterima.")
                     return content.strip()
-                
-            except Exception as e:
-                print(f"Error pada percobaan ke-{attempt+1}: {e}")
+                else:
+                    return "Maaf, AI memberikan respons kosong."
+
+            except RateLimitError as e:
+                wait_time = (2 ** attempt) * 5
+                print(f"Terkena rate limit. Mencoba lagi dalam {wait_time} detik... Error: {e}")
+                time.sleep(wait_time)
+            
+            except (APIConnectionError, APIStatusError) as e:
+                print(f"Error koneksi atau status dari OpenAI API: {e}")
                 if attempt < max_retries - 1:
                     time.sleep(5)
-                    continue
                 else:
-                    return "Maaf, terjadi kesalahan setelah beberapa kali percobaan."
+                    return "Maaf, terjadi masalah koneksi saat menghubungi server OpenAI."
+            
+            except Exception as e:
+                print(f"Terjadi error tak terduga: {e}")
+                return "Maaf, terjadi kesalahan internal yang tidak terduga."
 
-        return "Maaf, saya tidak dapat memproses permintaan Anda saat ini."
+        return "Maaf, saya tidak dapat memproses permintaan Anda setelah beberapa kali percobaan."

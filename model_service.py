@@ -1,28 +1,37 @@
-# file: model_service.py
+# file: model_service.py (PERBAIKAN INISIALISASI KLIEN)
 
 import os
 import pickle
 import pandas as pd
-# Hapus joblib jika tidak digunakan, dan numpy jika tidak digunakan di sini
 from dotenv import load_dotenv
-from retrieval import BM25L, preprocess_text # Pastikan import ini benar
+from retrieval import BM25L, preprocess_text
+from openai import OpenAI # <-- Tambahkan impor OpenAI
+from config import settings # <-- Impor settings untuk API Key
 
 # Memuat .env
 load_dotenv()
 
-# --- BAGIAN YANG DIUBAH ---
-# Variabel Global untuk menyimpan model dan data yang sudah dimuat
-# Ini akan diisi saat aplikasi FastAPI startup.
-DF_DATASET = None # DataFrame asli, lengkap
-DF_KONTEKS = None # DataFrame yang diproses untuk retrieval
-BM25L_MODEL = None # Model BM25L yang sudah dilatih
-# -------------------------
+# --- Variabel Global ---
+DF_DATASET = None
+DF_KONTEKS = None
+BM25L_MODEL = None
+openai_client: OpenAI | None = None # <-- Tambahkan variabel untuk klien OpenAI
 
-# Path untuk dataset dan cache embedding
+# --- Path ---
 DATASET_PATH = os.path.join("data", "Dataset_Optimized.xlsx")
 MODEL_CACHE_PATH = os.path.join("artifacts", "bm25l_model.pkl")
 DATAFRAME_CACHE_PATH = os.path.join("artifacts", "dataframe_bm25l.pkl")
 
+# --- FUNGSI BARU UNTUK INISIALISASI OPENAI ---
+def init_openai_client():
+    """Menginisialisasi klien OpenAI sekali saat startup."""
+    global openai_client
+    try:
+        openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        print("✅ Klien OpenAI berhasil diinisialisasi.")
+    except Exception as e:
+        print(f"❌ GAGAL inisialisasi klien OpenAI: {e}")
+# --------------------------------------------
 
 def load_full_dataset():
     """Memuat dataset lengkap dari file Excel."""
@@ -33,10 +42,8 @@ def load_full_dataset():
         print("Dataset lengkap berhasil dimuat.")
     return DF_DATASET
 
-
-# Cek apakah model BM25L dan DataFrame sudah ada di cache
 def load_model_cache():
-    # ... (fungsi ini tetap sama)
+    # ... (fungsi ini tidak berubah)
     try:
         with open(MODEL_CACHE_PATH, 'rb') as f:
             bm25l = pickle.load(f)
@@ -48,10 +55,8 @@ def load_model_cache():
         print("Cache tidak ditemukan.")
         return None, None
 
-
-# Simpan BM25L dan DataFrame ke dalam cache
 def save_model_cache(bm25l, df_konteks):
-    # ... (fungsi ini tetap sama)
+    # ... (fungsi ini tidak berubah)
     os.makedirs("artifacts", exist_ok=True)
     with open(MODEL_CACHE_PATH, 'wb') as f:
         pickle.dump(bm25l, f)
@@ -59,17 +64,9 @@ def save_model_cache(bm25l, df_konteks):
         pickle.dump(df_konteks, f)
     print("Model dan DataFrame berhasil disimpan ke cache.")
 
-
-# Fungsi untuk membuat model BM25L dan DataFrame
 def create_bm25l_retrieval_system(data_path):
-    # ... (fungsi ini tetap sama)
+    # ... (fungsi ini tidak berubah)
     df = pd.read_excel(data_path)
-    # Gunakan 'konteks_pencarian' seperti yang Anda lakukan
     df['processed_text'] = df['konteks_pencarian'].apply(preprocess_text)
     bm25l = BM25L(df['processed_text'].tolist())
-    # Kembalikan DataFrame yang sudah diproses, bukan yang mentah
     return df, bm25l
-
-# HAPUS FUNGSI INI UNTUK MENGHINDARI KEBINGUNGAN
-# Fungsi search_documents(query, top_k=5) tidak lagi diperlukan di sini
-# karena logika pencarian sudah ada di retrieval.py dan dipanggil dari chatbot.py

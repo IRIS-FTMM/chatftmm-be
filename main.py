@@ -1,12 +1,9 @@
-# file: main.py
+# file: main.py (PERBAIKAN CORS)
 
 from fastapi import FastAPI
 from chat_router import router as chat_router
 from fastapi.middleware.cors import CORSMiddleware
-# --- BAGIAN YANG DIUBAH ---
-# Impor modulnya, bukan fungsinya secara spesifik
-import model_service 
-# -------------------------
+import model_service
 
 app = FastAPI(
     title="Chatbot FTMM API",
@@ -14,20 +11,23 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# URL frontend yang diizinkan untuk berkomunikasi dengan backend
+# --- PERUBAHAN PENTING ADA DI SINI ---
+# Tambahkan URL frontend Anda yang sudah di-deploy ke dalam daftar origins
 origins = [
     "http://localhost",
     "http://localhost:5173",
-    "https://chatftmm-fe-production.up.railway.app"  # URL Frontend di Railway
+    "https://chatftmm-fe-production-9d80.up.railway.app", # <-- URL BARU DITAMBAHKAN
 ]
+# ------------------------------------
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"], # Izinkan semua metode (GET, POST, dll)
+    allow_headers=["*"], # Izinkan semua header
 )
+
 # API Routers
 app.include_router(chat_router, prefix="/api", tags=["Chat"])
 
@@ -35,23 +35,22 @@ app.include_router(chat_router, prefix="/api", tags=["Chat"])
 async def startup_event():
     print("🚀 Aplikasi FastAPI memulai...")
 
-    # --- BAGIAN YANG DIUBAH SECARA TOTAL ---
-    # 1. Muat dataset lengkap terlebih dahulu
+    # Inisialisasi Klien OpenAI (PENTING untuk perbaikan kedua)
+    model_service.init_openai_client()
+
+    # Memuat dataset lengkap terlebih dahulu
     model_service.load_full_dataset()
 
-    # 2. Coba muat model dari cache
+    # Coba muat model cache BM25L
     df_konteks, bm25l = model_service.load_model_cache()
 
-    # 3. Jika cache tidak ada, buat model baru
     if df_konteks is None or bm25l is None:
         print("Cache tidak ada, membangun sistem retrieval baru...")
         df_konteks, bm25l = model_service.create_bm25l_retrieval_system(model_service.DATASET_PATH)
         model_service.save_model_cache(bm25l, df_konteks)
     
-    # 4. Simpan model yang sudah siap ke variabel global di model_service
-    # INI ADALAH KUNCI UTAMANYA!
+    # Simpan model yang sudah siap ke variabel global
     model_service.DF_KONTEKS = df_konteks
     model_service.BM25L_MODEL = bm25l
 
     print("✅ Server siap menerima permintaan.")
-    # ----------------------------------------

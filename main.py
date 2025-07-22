@@ -1,4 +1,4 @@
-# file: main.py (PERBAIKAN CORS FINAL)
+# file: main.py (PERBAIKAN CORS UNTUK LOKAL & DEPLOYMENT)
 
 from fastapi import FastAPI
 from chat_router import router as chat_router
@@ -11,10 +11,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# --- PERUBAHAN KRUSIAL ADA DI SINI ---
-# Kita mengizinkan semua origin untuk sementara waktu untuk debugging
-origins = ["*"]
-# ------------------------------------
+# --- DAFTAR LENGKAP ORIGIN YANG DIIZINKAN ---
+origins = [
+    "http://localhost",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://chatftmm-fe-production-9d80.up.railway.app", # <-- URL DEPLOYMENT ANDA
+]
+# -----------------------------------------------
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,13 +35,8 @@ app.include_router(chat_router, prefix="/api", tags=["Chat"])
 async def startup_event():
     print("🚀 Aplikasi FastAPI memulai...")
     
-    # Inisialisasi Klien OpenAI
     model_service.init_openai_client()
-
-    # Memuat dataset lengkap terlebih dahulu
     model_service.load_full_dataset()
-
-    # Coba muat model cache BM25L
     df_konteks, bm25l = model_service.load_model_cache()
 
     if df_konteks is None or bm25l is None:
@@ -45,7 +44,6 @@ async def startup_event():
         df_konteks, bm25l = model_service.create_bm25l_retrieval_system(model_service.DATASET_PATH)
         model_service.save_model_cache(bm25l, df_konteks)
     
-    # Simpan model yang sudah siap ke variabel global
     model_service.DF_KONTEKS = df_konteks
     model_service.BM25L_MODEL = bm25l
 

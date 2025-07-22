@@ -1,0 +1,30 @@
+# Tahap 1: Base Image
+# Menggunakan image Python 3.12 yang ramping (slim)
+FROM python:3.12-slim
+
+# Menetapkan direktori kerja di dalam container
+WORKDIR /app
+
+# Mengatur agar output Python tidak di-buffer, sehingga log langsung terlihat
+ENV PYTHONUNBUFFERED 1
+
+# Menyalin file requirements terlebih dahulu untuk memanfaatkan caching Docker
+COPY requirements.txt .
+
+# Meng-install semua dependensi
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Mengunduh paket data NLTK yang diperlukan saat build
+# Ini menggantikan kebutuhan file setup.py
+RUN python -m nltk.downloader punkt stopwords
+
+# Menyalin semua sisa kode proyek ke dalam direktori kerja
+COPY . .
+
+# Memberitahu Docker bahwa container akan mendengarkan di port 8080 (atau port lain)
+# Railway akan secara otomatis memetakan port ini ke port publik
+EXPOSE 8080
+
+# Perintah untuk menjalankan aplikasi saat container dimulai
+# Railway akan mengganti $PORT dengan port yang benar secara otomatis
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

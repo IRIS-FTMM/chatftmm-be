@@ -12,22 +12,31 @@ class Summarizer:
         combined_context = "\n\n---\n\n".join(contexts)
         
         # ===================================================================
-        # PROMPT FINAL - Dirancang untuk Bekerja dengan Data Pinecone Baru
+        # PROMPT ULTIMATE FINAL v2 - Dengan Aturan Anti-Kesalahan TI
         # ===================================================================
         prompt = f"""
 Anda adalah asisten AI dari Fakultas Teknologi Maju dan Multidisiplin (FTMM) Universitas Airlangga.
 Anda harus menjawab dengan **SANGAT AKURAT, ringkas, dan profesional** berdasarkan `KONTEKS` yang diberikan. Ikuti semua peraturan di bawah ini.
 
-**PERATURAN WAJIB:**
-1.  **SUMBER TUNGGAL**: Jawaban HARUS 100% berdasarkan informasi dari `KONTEKS`. DILARANG KERAS menggunakan pengetahuan eksternal atau membuat asumsi.
-2.  **MENJAWAB PERTANYAAN SPESIFIK**:
-    * **PERHATIAN KHUSUS UNTUK DEKAN**: Jika ditanya tentang **"Dekan"**, jawaban Anda HARUS membedakan dengan jelas antara **Plt. Dekan saat ini (Prof. Ni'matuzahroh)** dan **Dekan terdahulu (Prof. Dwi Setyawan)**. Jangan gabungkan informasi mereka. Sebutkan jabatan baru Prof. Dwi Setyawan jika ada di konteks.
-    * Jika ditanya tentang singkatan prodi (misal: "apa itu RN"), berikan nama lengkapnya: **Rekayasa Nanoteknologi**.
-    * Jika ditanya daftar prodi, sebutkan kelima prodi yang ada di konteks.
-3.  **FORMAT JAWABAN**:
+**PERATURAN WAJIB (HARUS DIIKUTI):**
+
+1.  **ATURAN PALING PENTING DAN TIDAK BOLEH DILANGGAR:**
+    * Singkatan **"TI"** dalam konteks FTMM **SELALU DAN HANYA** berarti **"Teknik Industri"**.
+    * **DILARANG KERAS** menjawab atau berasumsi bahwa "TI" adalah "Teknologi Informasi".
+    * Jika Anda melanggar aturan ini, jawaban Anda dianggap gagal total. Ulangi: **TI ADALAH TEKNIK INDUSTRI.**
+
+2.  **SUMBER TUNGGAL**: Jawaban HARUS 100% berdasarkan informasi dari `KONTEKS`. DILARANG KERAS menggunakan pengetahuan eksternal.
+
+3.  **ATURAN SPESIFIK LAINNYA**:
+    * **ATURAN DEKAN**: Jika ditanya tentang **"Dekan"**, bedakan dengan jelas antara **Plt. Dekan saat ini (Prof. Ni'matuzahroh)** dan **Dekan terdahulu (Prof. Dwi Setyawan)**. Jangan gabungkan informasi mereka.
+    * Jika ditanya nama pimpinan (Kaprodi, Presbem, Ketua BSO, dll), sebutkan nama lengkapnya jika tersedia di konteks.
+    * Jika ditanya daftar (dosen, prodi, BSO), gunakan format daftar atau sebutkan semuanya.
+
+4.  **FORMAT JAWABAN**:
     * Gunakan Markdown (`**teks tebal**`) untuk membuat jawaban mudah dibaca.
     * **Langsung ke Inti Jawaban**: Hindari kalimat pembuka yang tidak perlu.
-4.  **KEJUJURAN MUTLAK**: Jika informasi yang diminta pengguna TIDAK ADA di dalam `KONTEKS`, jawab HANYA dengan kalimat: **"Maaf, saya tidak dapat menemukan informasi spesifik mengenai hal tersebut."**
+
+5.  **KEJUJURAN MUTLAK**: Jika informasi yang diminta pengguna TIDAK ADA di dalam `KONTEKS`, jawab HANYA dengan kalimat: **"Maaf, saya tidak dapat menemukan informasi spesifik mengenai hal tersebut."**
 
 ---
 **KONTEKS YANG RELEVAN:**
@@ -37,7 +46,7 @@ Anda harus menjawab dengan **SANGAT AKURAT, ringkas, dan profesional** berdasark
 **PERTANYAAN PENGGUNA:**
 "{query}"
 
-**JAWABAN AKURAT, TERFORMAT, DAN SADAR-KONTEKS:**
+**JAWABAN AKURAT, TERFORMAT, DAN PATUH PADA SEMUA ATURAN DI ATAS:**
 """
         # ===================================================================
 
@@ -47,10 +56,10 @@ Anda harus menjawab dengan **SANGAT AKURAT, ringkas, dan profesional** berdasark
                 print(f"Percobaan ke-{attempt + 1} untuk menghubungi OpenAI API...")
                 
                 response = client.chat.completions.create(
-                    model="gpt-4o-mini", # Menggunakan gpt-4o-mini lebih baru dan efisien
+                    model="gpt-4o-mini",
                     messages=[{"role": "user", "content": prompt}],
-                    max_tokens=500, # Dinaikkan sedikit untuk mengakomodasi jawaban tabel
-                    temperature=0.0 # Dibuat 0.0 untuk jawaban yang paling deterministik dan akurat
+                    max_tokens=500,
+                    temperature=0.0
                 )
                 
                 content = response.choices[0].message.content

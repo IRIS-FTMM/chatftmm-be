@@ -1,8 +1,6 @@
-# file: summarization.py (PERBAIKAN CARA MENGGUNAKAN KLIEN)
-
 import time
 from openai import RateLimitError, APIConnectionError, APIStatusError
-import model_service # <-- Impor seluruh modul
+import model_service # Impor seluruh modul
 
 class Summarizer:
     def summarize(self, query: str, contexts: list[str]) -> str:
@@ -13,37 +11,35 @@ class Summarizer:
 
         combined_context = "\n\n---\n\n".join(contexts)
         
-        # Prompt lengkap Anda (tidak ada perubahan di sini)
+        # ===================================================================
+        # PROMPT FINAL - Dirancang untuk Bekerja dengan Data Pinecone Baru
+        # ===================================================================
         prompt = f"""
-        Anda adalah asisten AI ahli dari Fakultas Teknologi Maju dan Multidisiplin (FTMM) Universitas Airlangga.
-        Anda harus menjawab dengan SANGAT AKURAT berdasarkan konteks yang diberikan dan mengikuti semua peraturan.
+Anda adalah asisten AI dari Fakultas Teknologi Maju dan Multidisiplin (FTMM) Universitas Airlangga.
+Anda harus menjawab dengan **SANGAT AKURAT, ringkas, dan profesional** berdasarkan `KONTEKS` yang diberikan. Ikuti semua peraturan di bawah ini.
 
-        **PERATURAN UTAMA & KONTEKS SPESIFIK FTMM:**
-        1.  **Akurasi Tinggi**: Jawaban HARUS diambil murni dari teks dalam `KONTEKS`. Jangan menggunakan pengetahuan eksternal.
-        2.  **Presisi Nama & Gelar**: Saat menyebutkan nama orang, Anda WAJIB menyalin NAMA LENGKAP beserta SEMUA GELAR AKADEMIK persis seperti yang tertulis. JANGAN menyingkat atau mengubah format.
-        3.  **PENANGANAN SINGKATAN (SANGAT PENTING!):**
-            * Singkatan **"TI"** dalam konteks FTMM selalu merujuk pada **"Teknik Industri"**, BUKAN "Teknologi Informasi". Selalu gunakan nama lengkap "Teknik Industri" saat menjawab.
-            * Singkatan **"TSD"** merujuk pada **"Teknologi Sains Data"**.
-            * Singkatan **"TRKB"** merujuk pada **"Teknik Robotika dan Kecerdasan Buatan"**.
-            * Singkatan **"TE"** merujuk pada **"Teknik Elektro"**.
-            * Singkatan **"RN"** merujuk pada **"Rekayasa Nanoteknologi"**.
-        4.  **PENANGANAN SINONIM:**
-            * Istilah **"Organisasi"** dan **"ORMAWA"** (Organisasi Mahasiswa) merujuk pada hal yang sama. Jika ditanya salah satunya, berikan daftar ORMAWA lengkap yang ada (BEM, BLM, Himpunan Mahasiswa).
-        5.  **Gunakan Markdown**: Format jawaban Anda menggunakan Markdown untuk kejelasan.
-            * Gunakan `**teks tebal**` untuk nama orang, jabatan, dan nama program studi lengkap.
-            * Gunakan `*teks miring*` untuk nama acara, kompetisi, atau inovasi.
-        6.  **Kejujuran**: Jika informasi tidak ada di dalam `KONTEKS`, jawab dengan jujur bahwa Anda tidak dapat menemukannya.
+**PERATURAN WAJIB:**
+1.  **SUMBER TUNGGAL**: Jawaban HARUS 100% berdasarkan informasi dari `KONTEKS`. DILARANG KERAS menggunakan pengetahuan eksternal atau membuat asumsi.
+2.  **MENJAWAB PERTANYAAN SPESIFIK**:
+    * **PERHATIAN KHUSUS UNTUK DEKAN**: Jika ditanya tentang **"Dekan"**, jawaban Anda HARUS membedakan dengan jelas antara **Plt. Dekan saat ini (Prof. Ni'matuzahroh)** dan **Dekan terdahulu (Prof. Dwi Setyawan)**. Jangan gabungkan informasi mereka. Sebutkan jabatan baru Prof. Dwi Setyawan jika ada di konteks.
+    * Jika ditanya tentang singkatan prodi (misal: "apa itu RN"), berikan nama lengkapnya: **Rekayasa Nanoteknologi**.
+    * Jika ditanya daftar prodi, sebutkan kelima prodi yang ada di konteks.
+3.  **FORMAT JAWABAN**:
+    * Gunakan Markdown (`**teks tebal**`) untuk membuat jawaban mudah dibaca.
+    * **Langsung ke Inti Jawaban**: Hindari kalimat pembuka yang tidak perlu.
+4.  **KEJUJURAN MUTLAK**: Jika informasi yang diminta pengguna TIDAK ADA di dalam `KONTEKS`, jawab HANYA dengan kalimat: **"Maaf, saya tidak dapat menemukan informasi spesifik mengenai hal tersebut."**
 
-        **KONTEKS YANG RELEVAN:**
-        ---
-        {combined_context}
-        ---
+---
+**KONTEKS YANG RELEVAN:**
+{combined_context}
+---
 
-        **PERTANYAAN PENGGUNA:**
-        "{query}"
+**PERTANYAAN PENGGUNA:**
+"{query}"
 
-        **JAWABAN AKURAT, TERFORMAT, DAN SADAR-KONTEKS:**
-        """
+**JAWABAN AKURAT, TERFORMAT, DAN SADAR-KONTEKS:**
+"""
+        # ===================================================================
 
         max_retries = 3
         for attempt in range(max_retries):
@@ -51,10 +47,10 @@ class Summarizer:
                 print(f"Percobaan ke-{attempt + 1} untuk menghubungi OpenAI API...")
                 
                 response = client.chat.completions.create(
-                    model="gpt-4.1-mini",
+                    model="gpt-4o-mini", # Menggunakan gpt-4o-mini lebih baru dan efisien
                     messages=[{"role": "user", "content": prompt}],
-                    max_tokens=400,
-                    temperature=0.1
+                    max_tokens=500, # Dinaikkan sedikit untuk mengakomodasi jawaban tabel
+                    temperature=0.0 # Dibuat 0.0 untuk jawaban yang paling deterministik dan akurat
                 )
                 
                 content = response.choices[0].message.content

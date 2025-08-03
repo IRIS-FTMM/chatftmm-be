@@ -18,7 +18,7 @@ BM25L_MODEL = None
 openai_client: OpenAI | None = None # <-- Tambahkan variabel untuk klien OpenAI
 
 # --- Path ---
-DATASET_PATH = os.path.join("data", "Dataset_Optimized.xlsx")
+DATASET_PATH = os.path.join("data", "Dataset_Optimized_FTMM_UNAIR.xlsx")
 MODEL_CACHE_PATH = os.path.join("artifacts", "bm25l_model.pkl")
 DATAFRAME_CACHE_PATH = os.path.join("artifacts", "dataframe_bm25l.pkl")
 

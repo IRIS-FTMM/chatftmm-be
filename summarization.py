@@ -66,8 +66,7 @@ Anda harus menjawab dengan **SANGAT AKURAT, ringkas, dan profesional** berdasark
                 response = client.chat.completions.create(
                     model="o4-mini",
                     messages=[{"role": "user", "content": prompt}],
-                    max_tokens=500,
-                    temperature=0.0
+                    max_completion_tokens=500,
                 )
                 
                 content = response.choices[0].message.content
